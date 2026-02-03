@@ -1,0 +1,1808 @@
+openapi: 3.1.0
+info:
+  title: Food Bank Finder & Management API
+  version: 1.0.0
+  description: jade-jasmine team api
+paths:
+  /user:
+    get:
+      tags:
+        - user
+      summary: get a list of all users
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - username
+                    - email
+                    - id
+                  properties:
+                    id:
+                      type: integer
+                      minimum: 1
+                      examples:
+                        - 1
+                        - 5
+                        - 1000
+                      description: the id of the user
+                    email:
+                      type: string
+                      examples:
+                        - admin@gmail.com
+                      description: the user email
+                    username:
+                      type: string
+                      examples:
+                        - admin
+                      description: the username of the user
+                  description: A user is either a food bank admin or a food bank employee
+                title: GetAListOfAllUsersOk
+                description: an array of user objects
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/username"
+        - $ref: "#/components/parameters/email"
+        - in: query
+          name: user_id
+          style: form
+          schema:
+            type: integer
+          explode: true
+          required: false
+          description: the id of the user
+          allowReserved: false
+      description: |-
+        - with no params will get all the users
+        - with id, it will get that specific user with that id
+        - with username, it will get that specific user with that username
+        - with email, it will get that specific user with that email
+
+        DO NOT COMBINE these fields. They are mutually exclusive!
+      operationId: getAListOfAllUsers
+    post:
+      tags:
+        - user
+      summary: Register a new user
+      security:
+        - BearerJwt: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                type: object
+                title: RegisterANewUserCreated
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+          description: The request was successful, and a new resource was created.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters: []
+      operationId: registerANewUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+              properties:
+                email:
+                  type: string
+                username:
+                  type: string
+        required: true
+        description: new user is created with no roles
+  /foodbank:
+    get:
+      tags:
+        - food bank
+      summary: Get food bank list
+      security: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - street
+                    - city
+                    - country
+                    - secondary_admin_id
+                    - charity_id
+                    - hours
+                    - admin
+                  properties:
+                    id:
+                      type: integer
+                    fax:
+                      type: integer
+                    city:
+                      type: string
+                    name:
+                      type: string
+                    admin:
+                      $ref: "#/components/schemas/User"
+                    hours:
+                      type: string
+                    phone:
+                      type: integer
+                    staff:
+                      type: array
+                      items:
+                        type: integer
+                        minimum: 1
+                        description: the id of the employee
+                    street:
+                      type: string
+                      examples:
+                        - 555 Food Bank Way
+                        - 55 Pantry St
+                    country:
+                      type: string
+                    unit_no:
+                      type: string
+                      description: Can be a number or a letter
+                    website:
+                      $ref: "#/components/schemas/Hours"
+                    latitude:
+                      type: number
+                      format: float
+                    province:
+                      type: string
+                    longitude:
+                      type: number
+                      format: float
+                    charity_id:
+                      type: string
+                    postal_code:
+                      type: string
+                    secondary_admin_id:
+                      type: string
+                  description: The food bank or food pantry entity and all its details.
+                title: GetFoodBankListOk
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/city"
+        - $ref: "#/components/parameters/fb_name"
+        - in: query
+          name: fb_id
+          style: form
+          schema:
+            type: integer
+          explode: true
+          required: false
+          description: the id of the food bank
+          allowReserved: false
+      description: >
+        Fetches a comprehensive list of all food banks in our db. Each food bank
+        object includes essential details such as the food bank's ID, name,
+        opening hours etc.
+
+
+        This endpoint is paginated using the 'page' syntax.
+
+
+        The query params are mutually exclusive, so use only one at a time (or
+        none to get a list of all food banks)
+      operationId: getFoodBankList
+    post:
+      tags:
+        - food bank
+      summary: Create food bank
+      security:
+        - BearerJwt: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                type: object
+                title: CreateFoodBankCreated
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+          description: The request was successful, and a new resource was created.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters: []
+      description: |-
+        must be an authenticated user to create a food bank
+        (initially assume a 1-1 relationship between food bank and admin)
+      operationId: createFoodBank
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - city
+                - province
+                - country
+                - postal_code
+                - staff_ids
+                - phone
+                - street
+              properties:
+                fax:
+                  type: integer
+                city:
+                  type: string
+                name:
+                  type: string
+                phone:
+                  type: integer
+                street:
+                  type: string
+                country:
+                  type: string
+                unit_no:
+                  type: string
+                website:
+                  type: string
+                province:
+                  type: string
+                staff_ids:
+                  type: array
+                  items:
+                    type: integer
+                charity_no:
+                  type: string
+                postal_code:
+                  type: string
+                backup_admin:
+                  type: integer
+                  minimum: 1
+                  examples:
+                    - 1
+                    - 5000
+                  description: The user id of the person who will be the backup administrator if
+                    any.
+        required: true
+        description: The food bank's static data. The authorized user will become the
+          primary admin for this food bank.
+  /food/{food_id}:
+    delete:
+      tags:
+        - food
+      summary: Delete food
+      security:
+        - BearerJwt: []
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                type: "null"
+                title: DeleteFoodNoContent
+          description: The request was successful, but there is no content to return in
+            the response.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/food_id"
+      description: >-
+        Deletes a food item. User must be an admin. 
+
+        Food items are created relative to a food bank. So if two food banks
+        have the same food item, they are actually two different records behind
+        the scenes.
+      operationId: deleteFood
+  /user/{user_id}:
+    delete:
+      tags:
+        - user
+      summary: Delete user
+      security:
+        - BearerJwt: []
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                type: "null"
+                title: DeleteUserNoContent
+          description: The request was successful, but there is no content to return in
+            the response.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+        - in: query
+          name: id
+          style: form
+          schema:
+            type: integer
+          explode: true
+          required: true
+          description: the user id
+          allowReserved: false
+      operationId: deleteUser
+  /foodbank/{fb_id}:
+    delete:
+      tags:
+        - food bank
+      summary: Delete food bank
+      security:
+        - BearerJwt: []
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                type: "null"
+                title: DeleteBookNoContent
+          description: The request was successful, but there is no content to return in
+            the response.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+      description: Deletes a specific food bank from db. (side-effect, all food items,
+        boxes and categories that are present in this food bank's list will be
+        deleted too)
+      operationId: deleteFoodBank
+  /foodbank/{fb_id}/box:
+    get:
+      tags:
+        - box
+        - food bank
+      summary: gets a list of boxes and their quantities
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - fb_id
+                    - quantity
+                  properties:
+                    id:
+                      type: integer
+                      examples:
+                        - 1
+                        - 2
+                        - 3
+                    name:
+                      type: string
+                      examples:
+                        - Family Box
+                        - Single Box
+                      description: max length 35
+                    fb_id:
+                      type: integer
+                      minimum: 1
+                      examples:
+                        - 1
+                        - 2
+                      description: the food bank id
+                    quantity:
+                      type: integer
+                  description: A box of different food
+                title: GetsAListOfBoxesAndTheirQuantitiesOk
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/box_id"
+        - in: query
+          name: name
+          style: form
+          schema:
+            type: string
+          explode: true
+          required: false
+          description: the name of the category
+          allowReserved: false
+        - $ref: "#/components/parameters/fb_id"
+      description: returns a list of boxes for this food bank and their quantities
+      operationId: getsAListOfBoxesAndTheirQuantities
+    post:
+      tags:
+        - box
+      summary: Create box
+      security:
+        - BearerJwt: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Box"
+          description: The request was successful, and a new resource was created.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+      operationId: createBox
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - food
+                - name
+              properties:
+                food:
+                  type: array
+                  items:
+                    type: integer
+                name:
+                  type: string
+        required: true
+        description: |-
+          the box has a name and has a list of foods associated with it
+          the list of foods is an array of food ids
+  /foodbank/{fb_id}/food:
+    get:
+      tags:
+        - food
+        - food bank
+      summary: get a list of food and its quantity
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - box
+                    - category
+                    - quantity
+                  properties:
+                    id:
+                      type: integer
+                    box:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - id
+                          - name
+                          - fb_id
+                        properties:
+                          id:
+                            type: integer
+                            examples:
+                              - 1
+                              - 2
+                              - 3
+                          name:
+                            type: string
+                            examples:
+                              - Family Box
+                              - Single Box
+                            description: max length 35
+                          fb_id:
+                            type: integer
+                            minimum: 1
+                            examples:
+                              - 1
+                              - 2
+                            description: the food bank id
+                        description: A box of different food
+                    name:
+                      type: string
+                    barcode:
+                      type: string
+                      description: I don't know what type of thing barcodes are
+                    category:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - id
+                          - name
+                          - fb_id
+                        properties:
+                          id:
+                            type: integer
+                            examples:
+                              - 12
+                              - 14
+                          name:
+                            type: string
+                            examples:
+                              - Pride and Prejudice
+                              - Moby-Dick
+                          fb_id:
+                            type: integer
+                            minimum: 1
+                            examples:
+                              - 1
+                              - 5
+                            description: the food bank's id
+                        description: A food category like 'baby food' or 'fruit'
+                    quantity:
+                      type: integer
+                    description:
+                      type: string
+                  description: the food item data including the quantity
+                title: GetAListOfFoodAndItsQuantityOk
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/fb_id"
+        - $ref: "#/components/parameters/food_name"
+      description: get a list of food and its quantity for any given food bank
+      operationId: getAListOfFoodAndItsQuantity
+    post:
+      tags:
+        - food
+      summary: Create food item
+      security:
+        - BearerJwt: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Food"
+          description: The request was successful, and a new resource was created.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+      description: add a new food item to a given food bank
+      operationId: createFoodItem
+  /foodbank/{fb_id}/staff:
+    get:
+      tags:
+        - food bank
+        - user
+      summary: Get a food bank's staff
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - username
+                    - email
+                    - id
+                  properties:
+                    id:
+                      type: integer
+                      examples:
+                        - 1
+                        - 2
+                        - 3
+                    email:
+                      type: string
+                      examples:
+                        - admin@gmail.com
+                    username:
+                      type: string
+                      examples:
+                        - panther
+                        - cobra
+                  description: A user is either a food bank admin or a food bank employee
+                title: GetAFoodBanksStaffOk
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - in: query
+          name: name
+          style: form
+          schema:
+            type: string
+          explode: true
+          required: false
+          description: the name of the staff member
+          allowReserved: false
+        - in: query
+          name: fb_id
+          style: form
+          schema:
+            type: integer
+          explode: true
+          required: false
+          description: the id of the staff member
+          allowReserved: false
+        - $ref: "#/components/parameters/fb_id"
+      description: |-
+        gets a list of staff per food bank
+
+        query parameters are mutually exclusive! specify only one at a time!
+      operationId: getAFoodBanksStaff
+  /user/{user_id}/foodbank:
+    get:
+      tags:
+        - user
+      summary: get food bank by employee id
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodBank"
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+        - in: query
+          name: admin
+          style: form
+          schema:
+            type: boolean
+            examples:
+              - true
+              - false
+            description: false will give a list of food banks that this person works for in
+              general while true will filter that down to the ones he is admin
+              for
+          explode: true
+          required: false
+          description: set to true if you want only the food banks the user is an admin for
+          allowReserved: false
+      description: get a list of all food banks where this user works
+      operationId: getFoodBankByEmployeeId
+  /foodbank/{fb_id}/box/{id}:
+    delete:
+      tags:
+        - box
+      summary: Delete box by id from a foodbank
+      security:
+        - BearerJwt: []
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                type: "null"
+                title: DeleteBoxByIdFromAFoodbankNoContent
+          description: The request was successful, but there is no content to return in
+            the response.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+        - in: path
+          name: id
+          schema:
+            type: integer
+            minimum: 1
+            examples:
+              - 1
+              - 5
+            description: the box's id
+          required: true
+          description: the box id
+      description: delete a box by id from the foodbank
+      operationId: deleteBoxByIdFromAFoodbank
+  /foodbank/{fb_id}/category:
+    get:
+      tags:
+        - category
+        - food bank
+      summary: gets a category list
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - fb_id
+                  properties:
+                    id:
+                      type: integer
+                      examples:
+                        - 12
+                        - 14
+                    name:
+                      type: string
+                      examples:
+                        - Pride and Prejudice
+                        - Moby-Dick
+                    fb_id:
+                      type: integer
+                      minimum: 1
+                      examples:
+                        - 1
+                        - 5
+                      description: the food bank's id
+                  description: A food category like 'baby food' or 'fruit'
+                title: GetsACategoryListOk
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+        - $ref: "#/components/parameters/category_id"
+        - $ref: "#/components/parameters/cat_name"
+      description: retrieve a list of categories by food bank id
+      operationId: getsACategoryList
+    post:
+      tags:
+        - category
+      summary: Create category
+      security:
+        - BearerJwt: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+          description: The request was successful, and a new resource was created.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+      description: creates a new food category
+      operationId: createCategory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  examples:
+                    - baby food
+                    - fruit
+                  description: the food category
+        required: true
+        description: "create a new category "
+  /foodbank/{fb_id}/category/{id}:
+    delete:
+      tags:
+        - category
+      summary: Delete category by id from a foodbank
+      security:
+        - BearerJwt: []
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                type: "null"
+                title: DeleteCategoryByIdFromAFoodbankNoContent
+          description: The request was successful, but there is no content to return in
+            the response.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - in: query
+          name: category_id
+          style: form
+          schema:
+            type: string
+          explode: true
+          description: the id of the category
+          allowReserved: false
+          allowEmptyValue: false
+        - $ref: "#/components/parameters/fb_id"
+        - in: path
+          name: id
+          schema:
+            type: integer
+            minimum: 1
+            examples:
+              - 1
+              - 5
+              - 10
+            description: the category's id
+          required: true
+          description: category id
+      description: deletes a specific category by id
+      operationId: deleteCategoryByIdFromAFoodbank
+  /foodbank/{fb_id}/food/{food_id}:
+    put:
+      tags:
+        - food
+      summary: modify food characteristics/details
+      security:
+        - BearerJwt: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                title: ModifyFoodCharacteristicsDetailsOk
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+          description: The request was successful, and the server has returned the
+            requested resource in the response body.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: Authentication is required to access the requested resource. The
+            client must include the appropriate credentials.
+        "403":
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+          description: The server understood the request, but refuses to authorize it.
+            Ensure the client has appropriate permissions.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerErrror"
+      parameters:
+        - $ref: "#/components/parameters/fb_id"
+        - $ref: "#/components/parameters/food_id"
+      description: used to modify details of the food and its quantity
+      operationId: modifyFoodCharacteristicsDetails
+components:
+  schemas:
+    Box:
+      type: object
+      required:
+        - id
+        - name
+        - fb_id
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          examples:
+            - 1
+            - 2
+            - 3
+        name:
+          type: string
+          examples:
+            - Family Box
+            - Single Box
+          description: max length 35
+        fb_id:
+          type: integer
+          minimum: 1
+          examples:
+            - 1
+            - 2
+          description: the food bank id
+      description: A box of different food
+    Food:
+      type: object
+      required:
+        - id
+        - name
+        - box
+        - category
+        - quantity
+        - fb_id
+      properties:
+        id:
+          type: integer
+        box:
+          $ref: "#/components/schemas/Box"
+        name:
+          type: string
+        fb_id:
+          type: integer
+          minimum: 1
+          examples:
+            - 1
+            - 2
+          description: the food bank id
+        barcode:
+          type: string
+          description: I don't know what type of thing barcodes are
+        category:
+          $ref: "#/components/schemas/Category"
+        quantity:
+          type: integer
+          minimum: 0
+          examples:
+            - 0
+            - 5
+            - 100
+          description: the available inventory
+        description:
+          type: string
+      description: the food item data including the quantity
+    User:
+      type: object
+      required:
+        - username
+        - email
+        - id
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          examples:
+            - 1
+            - 2
+            - 3
+          description: the id of hte user
+        email:
+          type: string
+          examples:
+            - admin@gmail.com
+          description: the email of the user
+        username:
+          type: string
+          examples:
+            - panther
+            - cobra
+          description: the username of the user
+      description: A user is either a food bank admin or a food bank employee (note
+        they are all considered staff)
+    Hours:
+      type: object
+      required:
+        - id
+        - fb_id
+        - weekday
+        - opening_hr
+        - closing_hr
+        - temporarily_closed
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: the unique incremental id of this entry
+        fb_id:
+          type: integer
+        weekday:
+          type: integer
+          maximum: 7
+          minimum: 1
+          description: 1 means Sunday, 2 is Monday, 3 is Tuesday etc.
+        closing_hr:
+          type: string
+          description: time with timezone
+        opening_hr:
+          type: string
+          description: time with timezone
+        temporarily_closed:
+          type: boolean
+          examples:
+            - false
+          description: >-
+            by default the value is false which means the UI can display
+            open/closed based on the determination they make of the client's
+            timezone vs the food bank's timezone
+
+
+            The admin may set it to true in cases where they want to override
+            this calculation to force a state of 'Temporarily Closed' regardless
+            of the day/time.
+      description: the opening hours in a given day for a given food bank
+    Category:
+      type: object
+      required:
+        - id
+        - name
+        - fb_id
+      properties:
+        id:
+          type: integer
+          examples:
+            - 12
+            - 14
+        name:
+          type: string
+          examples:
+            - Pride and Prejudice
+            - Moby-Dick
+        fb_id:
+          type: integer
+          minimum: 1
+          examples:
+            - 1
+            - 5
+          description: the food bank's id
+      description: A food category like 'baby food' or 'fruit'
+    FoodBank:
+      type: object
+      required:
+        - id
+        - name
+        - street
+        - city
+        - country
+        - secondary_admin_id
+        - charity_id
+        - hours
+        - admin
+      properties:
+        id:
+          type: integer
+        fax:
+          type: integer
+        city:
+          type: string
+        name:
+          type: string
+        admin:
+          $ref: "#/components/schemas/User"
+        hours:
+          type: string
+        phone:
+          type: integer
+        staff:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            description: the id of the employee
+        street:
+          type: string
+          examples:
+            - 555 Food Bank Way
+            - 55 Pantry St
+        country:
+          type: string
+        unit_no:
+          type: string
+          description: Can be a number or a letter
+        website:
+          $ref: "#/components/schemas/Hours"
+        latitude:
+          type: number
+          format: float
+        province:
+          type: string
+        longitude:
+          type: number
+          format: float
+        charity_id:
+          type: string
+        postal_code:
+          type: string
+        secondary_admin_id:
+          type: string
+      description: The food bank or food pantry entity and all its details.
+  responses:
+    Conflict:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                examples:
+                  - Lorem ipsum
+      description: The request could not be completed due to a conflict with the
+        current state of the resource. Resolve the conflict and try again.
+    NotFound:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                examples:
+                  - Lorem ipsum
+      description: The server cannot find the requested resource. The endpoint may be
+        invalid or the resource may no longer exist.
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                examples:
+                  - Lorem ipsum
+      description: The server could not understand the request due to invalid syntax.
+        The client should modify the request and try again.
+    InternalServerErrror:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                examples:
+                  - Lorem ipsum
+      description: The server encountered an unexpected condition that prevented it
+        from fulfilling the request. Report the issue to the support team if it
+        persists.
+  parameters:
+    city:
+      in: query
+      name: city
+      style: form
+      schema:
+        type: string
+        examples:
+          - toronto
+          - metropolis
+        description: the name of the city
+      explode: true
+      description: the name of a city
+      allowReserved: false
+      allowEmptyValue: false
+    Admin:
+      in: cookie
+      name: Admin
+      style: form
+      schema:
+        type: string
+      explode: true
+      description: some cookie that identifies admins?
+      allowReserved: false
+      allowEmptyValue: false
+    Staff:
+      in: cookie
+      name: Staff
+      style: form
+      schema:
+        type: string
+      explode: true
+      description: some cookie that identifies staff? (an admin is staff, but staff is
+        not admin)
+      allowReserved: false
+      allowEmptyValue: false
+    email:
+      in: query
+      name: email
+      style: form
+      schema:
+        type: string
+        examples:
+          - admin@gmail.com
+        description: the email address of the user
+      explode: true
+      description: the email of the user
+      allowReserved: false
+      allowEmptyValue: false
+    fb_id:
+      in: path
+      name: fb_id
+      style: simple
+      schema:
+        type: integer
+        minimum: 1
+        examples:
+          - 1
+          - 5
+        description: the id of the food bank
+      explode: false
+      description: the id of the food bank
+      allowReserved: false
+      allowEmptyValue: true
+    limit:
+      in: query
+      name: limit
+      style: form
+      schema:
+        type: integer
+      explode: true
+      description: |-
+        the number of items to return per page of results
+        Default is 50
+      allowReserved: false
+      allowEmptyValue: false
+    box_id:
+      in: query
+      name: box_id
+      style: form
+      schema:
+        type: integer
+        examples:
+          - 1
+          - 2
+        description: the id number of the box
+      explode: true
+      description: the id of the box
+      allowReserved: false
+      allowEmptyValue: false
+    offset:
+      in: query
+      name: offset
+      style: form
+      schema:
+        type: integer
+      explode: true
+      description: >-
+        the number of rows to offset to (eg. if offset is 20, the first row
+        retrieved will be row 20)
+
+        Default is 0.
+      allowReserved: false
+      allowEmptyValue: false
+    fb_name:
+      in: query
+      name: fb_name
+      style: form
+      schema:
+        type: string
+        examples:
+          - Charity Food
+          - Community Food Bank
+        description: the name of the food bank
+      explode: true
+      description: the name of the food bank
+      allowReserved: false
+      allowEmptyValue: false
+    food_id:
+      in: path
+      name: food_id
+      style: simple
+      schema:
+        type: integer
+        minimum: 1
+        examples:
+          - 1
+          - 5
+        description: the id of the food
+      explode: false
+      description: the id of the food bank
+      allowReserved: false
+      allowEmptyValue: true
+    user_id:
+      in: path
+      name: user_id
+      style: simple
+      schema:
+        type: integer
+        minimum: 1
+        examples:
+          - 1
+          - 5
+        description: the id of the user
+      explode: false
+      description: the id of the food bank
+      allowReserved: false
+      allowEmptyValue: true
+    box_name:
+      in: query
+      name: box_name
+      style: form
+      schema:
+        type: string
+        examples:
+          - small box
+          - big box
+        description: the box name
+      explode: true
+      description: the name of the box
+      allowReserved: false
+      allowEmptyValue: false
+    cat_name:
+      in: query
+      name: cat_name
+      style: form
+      schema:
+        type: string
+        examples:
+          - fruit
+          - baby food
+        description: the category name
+      explode: true
+      description: the name of the category
+      allowReserved: false
+      allowEmptyValue: false
+    username:
+      in: query
+      name: username
+      style: form
+      schema:
+        type: string
+      explode: true
+      description: the username of the user
+      allowReserved: false
+      allowEmptyValue: false
+    food_name:
+      in: query
+      name: food_name
+      style: form
+      schema:
+        type: string
+        examples:
+          - Heart Food
+          - Metro Food
+        description: the name of the food bank
+      explode: true
+      description: the name of the food
+      allowReserved: false
+      allowEmptyValue: false
+    category_id:
+      in: query
+      name: category_id
+      style: form
+      schema:
+        type: integer
+      explode: true
+      description: the id of the category
+      allowReserved: false
+      allowEmptyValue: false
+    Authorization:
+      in: header
+      name: Authorization
+      style: simple
+      schema:
+        type: string
+      explode: false
+      description: the authorization bearer token?
+      allowReserved: false
+      allowEmptyValue: false
+  securitySchemes:
+    BearerJwt:
+      type: http
+      scheme: Bearer
+      description: "Jwt Auth: Authenticated requests contain a valid Json Web Token
+        (JWT) as part of the `Authorization: Bearer <JWT>` header."
+      bearerFormat: Json Web Token (JWT)
+tags:
+  - name: food bank
+  - name: user
+  - name: food
+    description: food at a food bank
+  - name: category
+  - name: box
